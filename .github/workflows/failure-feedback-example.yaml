@@ -1,0 +1,12 @@
+# Trigger failure-feedback as an example
+name: 'failure_feedback_example'
+description: 'Run failure_feedback with example text'
+
+
+jobs:
+  failure_feedback_example:
+    uses: avtalsbanken/githubactions/.github/workflows/failure-feedback.yaml@main
+    with:
+      error_msg: "Example error msg"
+    secrets:
+      SLACK_CI_APP: ${{ secrets.SLACK_CI_APP }}

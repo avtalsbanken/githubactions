@@ -1,0 +1,66 @@
+# Reusable Workflow
+# https://docs.github.com/en/actions/using-workflows/reusing-workflows
+#
+# Communicate failure to actions output, actions summary and Slack channel
+
+on:
+  workflow_call:
+    inputs:
+      error_msg:
+        description: Error message to be logged
+        type: string
+        required: true
+
+
+jobs:
+  failure-feedback:
+    name: Update CD git repo
+    runs-on: ubuntu-latest
+    needs: [build-deploy]
+    steps:
+      - name: Log context to output and step summary
+        run: |
+          echo "${{ inputs.error_msg }}"
+          echo "${{ inputs.error_msg }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Post failure to a Slack channel
+        id: slack
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          # Slack channel id, channel name, or user id to post message.
+          # See also: https://api.slack.com/methods/chat.postMessage#channels
+          channel-id: 'builds'
+          # For posting a simple plain text message
+          slack-message: "GitHub Action failed\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          payload: |
+            {
+                "text": "GitHub Action failed",
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": ":bomb: GitHub Action failed",
+                            "emoji": true
+                        }
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "GitHub Action run ☁️",
+                                    "emoji": true
+                                },
+                                "style": "primary",
+                                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                            }
+                        ]
+                    }
+                ]
+            }
+
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_CI_APP }}

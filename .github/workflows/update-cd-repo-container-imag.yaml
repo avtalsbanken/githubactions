@@ -1,0 +1,99 @@
+# Reusable Workflow
+# https://docs.github.com/en/actions/using-workflows/reusing-workflows
+#
+# Update a container image reference in the Continuous Delivery git repo
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        description: Application to update
+        type: string
+        required: true
+      env:
+        description: Target environment for the update. Maps to Argo CD overlay fodlers (e.g. dev, stag, prod)
+        default: dev
+        type: string
+        required: true
+      tag:
+        description: New tag to be update
+        type: string
+        required: true
+      cd_git_pat:
+        description: Github personal Access Token for CD repo
+        type: string
+        required: true
+      cd_git_repo:
+        description: Continuous Delivery git repo
+        type: string
+        required: true
+      cd_git_repo_ref:
+        description: Continuous Delivery git repo reference
+        type: string
+        default: main
+        required: false
+      artifact_location:
+        description: Container artifact registry location
+        type: string
+        default: europe-north1-docker.pkg.dev/avtalsbanken-gke/docker
+        required: false
+        
+env:
+  # Relative path where to checkout CD repo
+  CD_REPO_CHECKOUT_PATH: cd-repo
+
+
+jobs:
+  update_image_in_cd_repo:
+    name: Update CD git repo
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+            echo "::group::Tasks..."
+            echo "Update Git repo ${{ inputs.cd_git_repo }}:${{ inputs.cd_git_repo_ref }} "
+            echo "by modifying the Kustomize file under ArgoCD path ${{ inputs.app }}/overlays/${{ inputs.env }} with"
+            echo "images:
+            echo "- digest: ${{ inputs.tag }}
+            echo "  name: ${{ inputs.artifact_location }}/${{ inputs.app }}
+            echo "::endgroup::"
+
+      - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
+        shell: bash
+
+      - name: Checkout CD repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.cd_git_repo }}
+          path: ${{ env.CD_REPO_CHECKOUT_PATH }}
+          ref: ${{ inputs.cd_git_repo_ref }}
+          token: ${{ inputs.cd_git_pat }}
+
+      # Update Container image in Continuous Delivery repo
+      # Use Kustomize
+      - name: Run Kubernetes tools
+        uses: stefanprodan/kube-tools@v1
+        with:
+          command: |
+            cd ${{ env.CD_REPO_CHECKOUT_PATH }}
+            # Use the right ArgoCD overlay folder
+            cd ${{ inputs.app }}/overlays/${{ inputs.env }}
+            kustomize edit set image ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}
+
+      # Push git changes
+      - uses: EndBug/add-and-commit@v9
+        id: add-and-commit
+        with:
+          cwd: ${{ env.CD_REPO_CHECKOUT_PATH }}
+          committer_name: 'Github Actions: ${{ github.repository }}'
+          author_name: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          message: ${{ inputs.env }} deploy - ${{ inputs.app }}:${{ inputs.tag }}
+
+      - name: Updating job summary
+        shell: bash
+        run: |
+          echo "Application: **${{ inputs.app }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: **${{ inputs.env }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Tag: **${{ inputs.tag }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Target repo: ${{ inputs.cd_git_repo }}:${{ steps.add-and-commit.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "Target file: ${{ inputs.app }}/overlays/${{ inputs.env }}/kustomize.yaml" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
