@@ -1,6 +1,9 @@
 # Trigger failure-feedback as an example
 name: 'failure_feedback_example'
-description: 'Run failure_feedback with example text'
+on:
+  push:
+    branches:
+      - main
 
 
 jobs:
