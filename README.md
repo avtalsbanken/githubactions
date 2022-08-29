@@ -1,4 +1,4 @@
-# Shared Github Actions functionalit
+# Shared Github Actions functionality
 
 ## Reusable Workflow
 https://docs.github.com/en/actions/using-workflows/reusing-workflows
