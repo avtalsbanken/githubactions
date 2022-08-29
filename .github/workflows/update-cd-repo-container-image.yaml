@@ -3,6 +3,8 @@
 #
 # Update a container image reference in the Continuous Delivery git repo
 
+name: Update image ref in CD git repo
+
 on:
   workflow_call:
     inputs:
@@ -16,11 +18,7 @@ on:
         type: string
         required: true
       tag:
-        description: New tag to be update
-        type: string
-        required: true
-      cd_git_pat:
-        description: Github personal Access Token for CD repo
+        description: New tag to be applied
         type: string
         required: true
       cd_git_repo:
@@ -66,7 +64,7 @@ jobs:
           repository: ${{ inputs.cd_git_repo }}
           path: ${{ env.CD_REPO_CHECKOUT_PATH }}
           ref: ${{ inputs.cd_git_repo_ref }}
-          token: ${{ inputs.cd_git_pat }}
+          # token: ${{ inputs.cd_git_pat }}
 
       # Update Container image in Continuous Delivery repo
       # Use Kustomize
