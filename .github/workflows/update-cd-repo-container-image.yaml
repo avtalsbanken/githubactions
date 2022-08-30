@@ -50,9 +50,9 @@ jobs:
             echo "::group::Tasks..."
             echo "Update Git repo ${{ inputs.cd_git_repo }}:${{ inputs.cd_git_repo_ref }} "
             echo "by modifying the Kustomize file under ArgoCD path ${{ inputs.app }}/overlays/${{ inputs.env }} with"
-            echo "images:
-            echo "- digest: ${{ inputs.tag }}
-            echo "  name: ${{ inputs.artifact_location }}/${{ inputs.app }}
+            echo "images:"
+            echo "- digest: ${{ inputs.tag }}"
+            echo "  name: ${{ inputs.artifact_location }}/${{ inputs.app }}"
             echo "::endgroup::"
 
       - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
@@ -64,7 +64,7 @@ jobs:
           repository: ${{ inputs.cd_git_repo }}
           path: ${{ env.CD_REPO_CHECKOUT_PATH }}
           ref: ${{ inputs.cd_git_repo_ref }}
-          # token: ${{ inputs.cd_git_pat }}
+          token: ${{ secrets.CI_PAT }}
 
       # Update Container image in Continuous Delivery repo
       # Use Kustomize
