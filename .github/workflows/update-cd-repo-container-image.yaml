@@ -58,6 +58,9 @@ jobs:
       - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
         shell: bash
 
+      - run: echo length = `expr length "${{ secrets.CI_PAT }}"`
+        shell: bash
+
       - name: Checkout CD repo
         uses: actions/checkout@v3
         with:
