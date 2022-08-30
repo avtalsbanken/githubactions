@@ -35,6 +35,10 @@ on:
         type: string
         default: europe-north1-docker.pkg.dev/avtalsbanken-gke/docker
         required: false
+      cd_git_pat:
+        type: string
+        description: “Personal Access Token for CD repo”
+        required: true
         
 env:
   # Relative path where to checkout CD repo
@@ -58,7 +62,7 @@ jobs:
       - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
         shell: bash
 
-      - run: echo length = `expr length "${{ secrets.CI_PAT }}"`
+      - run: echo length = `expr length "${{ inputs.cd_git_pat }}"`
         shell: bash
 
       - name: Checkout CD repo
@@ -67,7 +71,7 @@ jobs:
           repository: ${{ inputs.cd_git_repo }}
           path: ${{ env.CD_REPO_CHECKOUT_PATH }}
           ref: ${{ inputs.cd_git_repo_ref }}
-          token: ${{ secrets.CI_PAT }}
+          token: ${{ inputs.cd_git_pat }}
 
       # Update Container image in Continuous Delivery repo
       # Use Kustomize
