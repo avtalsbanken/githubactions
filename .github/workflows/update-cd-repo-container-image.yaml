@@ -5,6 +5,7 @@
 #
 # PRE-REQ:
 # Calling repo MUST have the CI_PAT secret defined within repo's secrets
+# Calling repo MUST have the SLACK_CI_APP secret defined within repo's secrets
 # Call this reusable workflow with "secrets: inherit"
 
 name: Update image ref in CD git repo
@@ -17,7 +18,7 @@ on:
         type: string
         required: true
       env:
-        description: Target environment for the update. Maps to Argo CD overlay fodlers (e.g. dev, stag, prod)
+        description: Target environment for the update. Maps to Argo CD overlay folders (e.g. dev, stag, prod)
         default: dev
         type: string
         required: true
@@ -55,7 +56,8 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - run: |
+      - name: log work to be done
+        run: |
             echo "::group::Tasks..."
             echo "Update Git repo ${{ inputs.cd_git_repo }}:${{ inputs.cd_git_repo_ref }} "
             echo "by modifying the Kustomize file under ArgoCD path ${{ inputs.app }}/overlays/${{ inputs.env }} with"
@@ -65,9 +67,6 @@ jobs:
             echo "::endgroup::"
 
       - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
-        shell: bash
-
-      - run: echo length = `expr length "${{ secrets.GITHUB_TOKEN }}"`
         shell: bash
 
       - name: Checkout CD repo
@@ -107,3 +106,57 @@ jobs:
           echo "Target repo: ${{ inputs.cd_git_repo }}:${{ steps.add-and-commit.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
           echo "Target file: ${{ inputs.app }}/overlays/${{ inputs.env }}/kustomize.yaml" >> $GITHUB_STEP_SUMMARY
           echo "Image: ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Post to a Slack channel
+        id: slack
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          # Slack channel id, channel name, or user id to post message.
+          # See also: https://api.slack.com/methods/chat.postMessage#channels
+          channel-id: 'builds'
+          # For posting a simple plain text message
+          slack-message: |
+            Release request successful
+
+            app: ${{ inputs.app }}
+            env: ${{ inputs.env }}
+            tag: ${{ inputs.tag }}
+
+          payload: |
+            {
+                "text": "Deployment request successful",
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": ":rocket: ${{ inputs.app }} deployment request successful",
+                            "emoji": true
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "env: *${{ inputs.env }}*\ntag: tag: ${{ inputs.tag }}"
+                        }
+                    },
+                    {
+                        "type": "actions",
+                        "elements": [
+                            {
+                                "type": "button",
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "GitHub Action run ☁️",
+                                    "emoji": true
+                                },
+                                "style": "primary",
+                                "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                            }
+                        ]
+                    }
+                ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_CI_APP }}
