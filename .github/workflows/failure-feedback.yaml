@@ -10,6 +10,14 @@
 on:
   workflow_call:
     inputs:
+      app:
+        description: Application that failed
+        type: string
+        required: true
+      env:
+        description: Target environment for the failing job (e.g. dev, stag, prod)
+        type: string
+        required: true
       error_msg:
         description: Error message to be logged
         type: string
@@ -45,6 +53,13 @@ jobs:
                             "type": "plain_text",
                             "text": ":bomb: GitHub Action failed",
                             "emoji": true
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "app: *${{ inputs.app }}*\env: *${{ inputs.env }}*"
                         }
                     },
                     {

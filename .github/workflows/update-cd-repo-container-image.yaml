@@ -19,7 +19,6 @@ on:
         required: true
       env:
         description: Target environment for the update. Maps to Argo CD overlay folders (e.g. dev, stag, prod)
-        default: dev
         type: string
         required: true
       tag:
@@ -104,7 +103,7 @@ jobs:
           echo "Environment: **${{ inputs.env }}**" >> $GITHUB_STEP_SUMMARY
           echo "Tag: **${{ inputs.tag }}**" >> $GITHUB_STEP_SUMMARY
           echo "Target repo: ${{ inputs.cd_git_repo }}:${{ steps.add-and-commit.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "Target file: ${{ inputs.app }}/overlays/${{ inputs.env }}/kustomize.yaml" >> $GITHUB_STEP_SUMMARY
+          echo "Target file: ${{ inputs.app }}/overlays/${{ inputs.env }}/kustomization.yaml" >> $GITHUB_STEP_SUMMARY
           echo "Image: ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Post to a Slack channel
@@ -124,13 +123,13 @@ jobs:
 
           payload: |
             {
-                "text": "Deployment request successful",
+                "text": "Release successful",
                 "blocks": [
                     {
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": ":rocket: ${{ inputs.app }} deployment request successful",
+                            "text": ":rocket: ${{ inputs.app }} release successful",
                             "emoji": true
                         }
                     },
@@ -138,7 +137,7 @@ jobs:
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "env: *${{ inputs.env }}*\ntag: tag: ${{ inputs.tag }}"
+                            "text": "env: *${{ inputs.env }}*\ntag: *${{ inputs.tag }}*\nrepo: *${{ inputs.cd_git_repo }}*\nfile: *${{ inputs.app }}/overlays/${{ inputs.env }}/kustomization.yaml*"
                         }
                     },
                     {
