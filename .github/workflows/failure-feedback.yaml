@@ -26,7 +26,7 @@ on:
 
 jobs:
   failure-feedback:
-    name: Update CD git repo
+    name: Communicate failure
     runs-on: ubuntu-latest
     steps:
       - name: Log context to output and step summary
