@@ -59,7 +59,7 @@ jobs:
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "app: *${{ inputs.app }}*\env: *${{ inputs.env }}*"
+                            "text": "app: *${{ inputs.app }}*\nenv: *${{ inputs.env }}*"
                         }
                     },
                     {
