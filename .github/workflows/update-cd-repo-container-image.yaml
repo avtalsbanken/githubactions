@@ -34,11 +34,6 @@ on:
         type: string
         default: main
         required: false
-      artifact_location:
-        description: Container artifact registry location
-        type: string
-        default: europe-north1-docker.pkg.dev/avtalsbanken-gke/docker
-        required: false
         
 env:
   # Relative path where to checkout CD repo
@@ -83,7 +78,7 @@ jobs:
             cd ${{ env.CD_REPO_CHECKOUT_PATH }}
             # Use the right ArgoCD overlay folder
             cd ${{ inputs.app }}/overlays/${{ inputs.env }}
-            kustomize edit set image ${{ inputs.artifact_location }}/${{ inputs.release_image }}
+            kustomize edit set image ${{ inputs.release_image }}
 
       # Push git changes
       - uses: EndBug/add-and-commit@v9
