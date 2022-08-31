@@ -2,6 +2,10 @@
 # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 #
 # Update a container image reference in the Continuous Delivery git repo
+#
+# PRE-REQ:
+# Calling repo MUST have the CI_PAT secret defined within repo's secrets
+# Call this reusable workflow with "secrets: inherit"
 
 name: Update image ref in CD git repo
 
@@ -72,7 +76,7 @@ jobs:
           repository: ${{ inputs.cd_git_repo }}
           path: ${{ env.CD_REPO_CHECKOUT_PATH }}
           ref: ${{ inputs.cd_git_repo_ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CI_PAT }}
 
       # Update Container image in Continuous Delivery repo
       # Use Kustomize

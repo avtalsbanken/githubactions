@@ -2,6 +2,10 @@
 # https://docs.github.com/en/actions/using-workflows/reusing-workflows
 #
 # Communicate failure to actions output, actions summary and Slack channel
+#
+# PRE-REQ:
+# Calling repo MUST have the SLACK_CI_APP secret defined within repo's secrets
+# Call this reusable workflow with "secrets: inherit"
 
 on:
   workflow_call:
