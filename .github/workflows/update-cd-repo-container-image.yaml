@@ -45,6 +45,11 @@ jobs:
   update_image_in_cd_repo:
     name: Update CD git repo
     runs-on: ubuntu-latest
+    # Add "id-token" with the intended permissions.
+    # https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - run: |
             echo "::group::Tasks..."
