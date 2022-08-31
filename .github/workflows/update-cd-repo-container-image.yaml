@@ -21,8 +21,8 @@ on:
         description: Target environment for the update. Maps to Argo CD overlay folders (e.g. dev, stag, prod)
         type: string
         required: true
-      tag:
-        description: New tag to be applied
+      release_image:
+        description: Image to be released. Eg name/app:sha-90dd603
         type: string
         required: true
       cd_git_repo:
@@ -59,10 +59,8 @@ jobs:
         run: |
             echo "::group::Tasks..."
             echo "Update Git repo ${{ inputs.cd_git_repo }}:${{ inputs.cd_git_repo_ref }} "
-            echo "by modifying the Kustomize file under ArgoCD path ${{ inputs.app }}/overlays/${{ inputs.env }} with"
-            echo "images:"
-            echo "- digest: ${{ inputs.tag }}"
-            echo "  name: ${{ inputs.artifact_location }}/${{ inputs.app }}"
+            echo "by modifying the Kustomize file under ArgoCD path ${{ inputs.app }}/overlays/${{ inputs.env }} to reference"
+            echo "${{ inputs.release_image }}"
             echo "::endgroup::"
 
       - run: mkdir -p ${{ env.CD_REPO_CHECKOUT_PATH }}
@@ -85,7 +83,7 @@ jobs:
             cd ${{ env.CD_REPO_CHECKOUT_PATH }}
             # Use the right ArgoCD overlay folder
             cd ${{ inputs.app }}/overlays/${{ inputs.env }}
-            kustomize edit set image ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}
+            kustomize edit set image ${{ inputs.artifact_location }}/${{ inputs.release_image }}
 
       # Push git changes
       - uses: EndBug/add-and-commit@v9
@@ -94,17 +92,17 @@ jobs:
           cwd: ${{ env.CD_REPO_CHECKOUT_PATH }}
           committer_name: 'Github Actions: ${{ github.repository }}'
           author_name: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          message: ${{ inputs.env }} deploy - ${{ inputs.app }}:${{ inputs.tag }}
+          message: ${{ inputs.env }} deploy - ${{ inputs.release_image }}
 
       - name: Updating job summary
         shell: bash
         run: |
           echo "Application: **${{ inputs.app }}**" >> $GITHUB_STEP_SUMMARY
           echo "Environment: **${{ inputs.env }}**" >> $GITHUB_STEP_SUMMARY
-          echo "Tag: **${{ inputs.tag }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Image: **${{ inputs.release_image }}**" >> $GITHUB_STEP_SUMMARY
           echo "Target repo: ${{ inputs.cd_git_repo }}:${{ steps.add-and-commit.outputs.commit_sha }}" >> $GITHUB_STEP_SUMMARY
           echo "Target file: ${{ inputs.app }}/overlays/${{ inputs.env }}/kustomization.yaml" >> $GITHUB_STEP_SUMMARY
-          echo "Image: ${{ inputs.artifact_location }}/${{ inputs.app }}:${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+
 
       - name: Post to a Slack channel
         id: slack
@@ -113,14 +111,6 @@ jobs:
           # Slack channel id, channel name, or user id to post message.
           # See also: https://api.slack.com/methods/chat.postMessage#channels
           channel-id: 'builds'
-          # For posting a simple plain text message
-          slack-message: |
-            Release request successful
-
-            app: ${{ inputs.app }}
-            env: ${{ inputs.env }}
-            tag: ${{ inputs.tag }}
-
           payload: |
             {
                 "text": "Release successful",
@@ -137,7 +127,7 @@ jobs:
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "env: *${{ inputs.env }}*\ntag: *${{ inputs.tag }}*\nrepo: *${{ inputs.cd_git_repo }}*\nfile: *${{ inputs.app }}/overlays/${{ inputs.env }}/kustomization.yaml*"
+                            "text": "env: *${{ inputs.env }}*\nimage: *${{ inputs.release_image }}*\nrepo: *${{ inputs.cd_git_repo }}*\nfile: *${{ inputs.app }}/overlays/${{ inputs.env }}/kustomization.yaml*"
                         }
                     },
                     {
